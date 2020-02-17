@@ -45,18 +45,28 @@ def _getPricingFields(url,
             # find the specific class where price is mentioned
             _pricing_tag = _soup.find(name="div",
                                       attrs={"class":
-                                             "ba-pricing flex flex-wrap "
+                                             "PricingInfo__ba-pricing___3JnR4 "
+                                             "flex flex-wrap "
                                              "align-right font-size-regular "
                                              "font-weight-light "
                                              "margin-bottom-xsmall"})
 
-            _html_parse += list(_pricing_tag.strings)
-            # return all value fields as a list
-            return _html_parse
+            if _pricing_tag is not None:
+                _html_parse += list(_pricing_tag.strings)
+                # return all value fields as a list
+                return _html_parse
+            else:
+                # cannot get the pricing tag of the site
+                LOG.error("Cannot fetch pricing tag of %s. "
+                          "Please reconfigure." % url)
+                return []
         else:  # the response is not ok
             return []
     except ConnectionError:
         LOG.error("URL is not accessible: %s" % url)
+        return []
+    except Exception as e:
+        LOG.error("An error occured:\n\n%s" % str(e))
         return []
 
 
@@ -76,27 +86,25 @@ while True:
 
     # if there is no sale, remain in the loop
     if len(price_fields) <= 2:
-        # if _DEBUG mode is on, send notifications
-        # even when the article is not for sale
-        if _DEBUG:
-            # cannot get the price_fields, notify
-            if len(price_fields) == 0:
-                client.send_message("No result from url %s.\n"
-                                    "Please check logging"
-                                    % website,
-                                    title="Error")
-
-            # the price of the article is not for sale.
-            elif len(price_fields) == 2:
+        if len(price_fields) == 0:
+            client.send_message("No result from url %s.\n"
+                                "Please check logging"
+                                % website,
+                                title="Error")
+        # the price of the article is not for sale.
+        elif len(price_fields) == 2:
+            # if _DEBUG mode is on, send notifications
+            # even when the article is not for sale
+            if _DEBUG:
                 client.send_message("No sale of item %s\nPrice remains %s" %
                                     (price_fields[0],
-                                     str(price_fields[1])),
+                                        str(price_fields[1])),
                                     title="No sale")
-            # should not happen... but still good to notify
-            else:
-                client.send_message("Price fields return weird number of "
-                                    "elements. Please check logging",
-                                    title="Weird error")
+        # should not happen... but still good to notify
+        else:
+            client.send_message("Price fields return weird number of "
+                                "elements. Please check logging",
+                                title="Weird error")
 
         time.sleep(refreshfreq)
         continue
