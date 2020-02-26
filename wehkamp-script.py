@@ -116,4 +116,4 @@ while True:
                              str(price_fields[2]),
                              website),
                             title="For sale!")
-        break
+    break
